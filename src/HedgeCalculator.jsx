@@ -23,7 +23,11 @@ export default function HedgeCalculator() {
 
     /** Compute dynamic slider bounds so the full range is usable */
     const getProfitBounds = (profit) => {
-        const max = Math.max(profit * 2, 10);
+        // Using `profit * 2` as the upper bound caused the slider to track
+        // the current value, visually pinning the thumb to the middle of the
+        // track. Instead, grow the range linearly so the thumb position
+        // reflects the actual profit proportion.
+        const max = Math.max(profit + 10, 10);
         return { min: 0, max };
     };
 
