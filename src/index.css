@@ -1,8 +1,11 @@
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
+  background-color: #111827;
+  color: #f3f4f6;
 }
