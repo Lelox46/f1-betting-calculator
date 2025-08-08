@@ -17,7 +17,7 @@ export default function HedgeCalculator() {
         { name: "Driver B", price: 0.37, profit: 3 },
         { name: "Driver C", price: 0.13, profit: 0 },
     ]);
-    const [setLastChanged] = useState(1);
+    const [, setLastChanged] = useState(1);
 
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
