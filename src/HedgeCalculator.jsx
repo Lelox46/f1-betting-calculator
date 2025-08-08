@@ -80,7 +80,7 @@ export default function HedgeCalculator() {
             <h1 className="text-3xl font-bold mb-4">Polymarket Hedge Calculator</h1>
 
             {/* Budget card */}
-            <div className="border rounded-xl bg-yellow-50 shadow-inner p-6 flex flex-col sm:flex-row flex-wrap items-center gap-4">
+            <div className="border border-gray-700 rounded-xl bg-gray-800 shadow-inner p-6 flex flex-col sm:flex-row flex-wrap items-center gap-4">
                 <label htmlFor="budget" className="font-semibold text-lg">
                     Available money to bet ($):
                 </label>
@@ -89,7 +89,7 @@ export default function HedgeCalculator() {
                     type="number"
                     min={0}
                     step={1}
-                    className="border rounded px-3 py-2 text-lg w-full sm:w-40"
+                    className="border border-gray-600 rounded px-3 py-2 text-lg w-full sm:w-40 bg-gray-700 text-gray-100"
                     placeholder="e.g. 100"
                     value={budget}
                     onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
@@ -99,7 +99,7 @@ export default function HedgeCalculator() {
             {/* Outcomes */}
             <div className="space-y-6">
                 {marketsAdj.map((m, idx) => (
-                    <div key={idx} className="border rounded-xl p-4 bg-white/80 shadow-lg space-y-3">
+                    <div key={idx} className="border border-gray-700 rounded-xl p-4 bg-gray-800 shadow-lg space-y-3">
                         <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-center">
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                 <label htmlFor={`name-${idx}`} className="font-medium">
@@ -107,7 +107,7 @@ export default function HedgeCalculator() {
                                 </label>
                                 <input
                                     id={`name-${idx}`}
-                                    className="border rounded px-2 py-1 w-full sm:w-40"
+                                    className="border border-gray-600 rounded px-2 py-1 w-full sm:w-40 bg-gray-700 text-gray-100"
                                     placeholder="Outcome name"
                                     value={m.name}
                                     onChange={(e) => updateMarket(idx, "name", e.target.value)}
@@ -123,7 +123,7 @@ export default function HedgeCalculator() {
                                     min={0}
                                     max={1}
                                     step={0.01}
-                                    className="border rounded px-2 py-1 w-full sm:w-24"
+                                    className="border border-gray-600 rounded px-2 py-1 w-full sm:w-24 bg-gray-700 text-gray-100"
                                     placeholder="0.50"
                                     value={m.price}
                                     onChange={(e) =>
@@ -147,7 +147,7 @@ export default function HedgeCalculator() {
                             {markets.length > 2 && (
                                 <button
                                     onClick={() => removeOutcome(idx)}
-                                    className="text-red-600 hover:text-red-800 font-semibold ml-auto"
+                                    className="text-red-400 hover:text-red-300 font-semibold ml-auto"
                                 >
                                     Remove Outcome
                                 </button>
@@ -158,7 +158,7 @@ export default function HedgeCalculator() {
                             className="flex justify-between items-center font-semibold mt-2"
                         >
                             <span>Profit if wins:</span>
-                            <span className="text-blue-700">${m.profit.toFixed(2)}</span>
+                            <span className="text-blue-400">${m.profit.toFixed(2)}</span>
                         </label>
                         <div className="flex items-center gap-2">
                             <input
@@ -166,7 +166,7 @@ export default function HedgeCalculator() {
                                 type="range"
                                 min={0}
                                 disabled={autoIdx === idx}
-                                className={`w-full ${autoIdx === idx ? "opacity-40" : ""}`}
+                                className={`w-full bg-gray-700 ${autoIdx === idx ? "opacity-40" : ""}`}
                                 value={m.profit}
                                 max={budget * 10}
                                 step={0.01}
@@ -175,11 +175,11 @@ export default function HedgeCalculator() {
                                 aria-valuenow={m.profit}
                                 onChange={(e) => updateMarket(idx, "profit", parseFloat(e.target.value))}
                             />
-                            <span className="text-sm text-gray-700 w-16 text-right">
+                            <span className="text-sm text-gray-300 w-16 text-right">
                                 ${m.profit.toFixed(2)}
                             </span>
                         </div>
-                        <div className="text-sm text-gray-700 grid grid-cols-3 gap-4 mt-1">
+                        <div className="text-sm text-gray-300 grid grid-cols-3 gap-4 mt-1">
                             <div>
                                 Shares: <strong>{shares[idx].toFixed(4)}</strong>
                             </div>
@@ -199,11 +199,11 @@ export default function HedgeCalculator() {
                 + Add Outcome
             </button>
 
-            <div className="text-right font-medium pt-6 border-t mt-6">
+            <div className="text-right font-medium pt-6 border-t border-gray-700 mt-6">
                 Total cost = ${totalCost.toFixed(2)} / {budget}
             </div>
             {sumPrices >= 1 && (
-                <div className="text-red-600 font-semibold text-center mt-4">
+                <div className="text-red-400 font-semibold text-center mt-4">
                     Arbitrage impossible: sum of YES prices ≥ 1.
                 </div>
             )}
