@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 
 /**
  * Polymarket Hedge Calculator — v3.1
@@ -10,14 +10,14 @@
 
 export default function HedgeCalculator() {
     /** ---------------- State ---------------- */
-    const [budget, setBudget] = useState(100);
+    const [budget, setBudget] = useState("100");
     const [autoIdx, setAutoIdx] = useState(0);
     const [markets, setMarkets] = useState([
-        { name: "Driver A", price: 0.4, profit: 20 },
-        { name: "Driver B", price: 0.37, profit: 3 },
-        { name: "Driver C", price: 0.13, profit: 0 },
+        { id: 0, name: "Driver A", price: "0.4", profit: 20 },
+        { id: 1, name: "Driver B", price: "0.37", profit: 3 },
+        { id: 2, name: "Driver C", price: "0.13", profit: 0 },
     ]);
-    const [, setLastChanged] = useState(1);
+    const [nextId, setNextId] = useState(3);
 
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -30,20 +30,29 @@ export default function HedgeCalculator() {
     /** Rebalance */
     const rebalance = useCallback(
         (arr, changedIdx = null) => {
-            const B = budget;
-            const p = arr.map((m) => m.price);
+            const B = parseFloat(budget) || 0;
+            const p = arr.map((m) => parseFloat(m.price) || 0);
             const costExceptAuto = arr.reduce(
                 (acc, m, i) => (i === autoIdx ? acc : acc + p[i] * (B + m.profit)),
                 0
             );
             let kAuto = p[autoIdx] ? (B - costExceptAuto) / p[autoIdx] - B : 0;
 
-            if (kAuto < 0 && changedIdx !== null && changedIdx !== autoIdx) {
-                const i = changedIdx;
-                const delta = (-kAuto * p[autoIdx]) / p[i];
-                arr = arr.map((m, idx) =>
-                    idx === i ? { ...m, profit: clamp(m.profit - delta, 0, Infinity) } : m
-                );
+            if (kAuto < 0) {
+                if (changedIdx !== null && changedIdx !== autoIdx) {
+                    const i = changedIdx;
+                    const delta = (-kAuto * p[autoIdx]) / p[i];
+                    arr = arr.map((m, idx) =>
+                        idx === i ? { ...m, profit: clamp(m.profit - delta, 0, Infinity) } : m
+                    );
+                } else {
+                    const ratio = B / costExceptAuto;
+                    arr = arr.map((m, idx) =>
+                        idx === autoIdx
+                            ? m
+                            : { ...m, profit: clamp((B + m.profit) * ratio - B, 0, Infinity) }
+                    );
+                }
                 const cost2 = arr.reduce(
                     (acc, m, j) => (j === autoIdx ? acc : acc + p[j] * (B + m.profit)),
                     0
@@ -58,9 +67,16 @@ export default function HedgeCalculator() {
 
     /** Derived */
     const marketsAdj = rebalance(markets);
-    const shares = marketsAdj.map((m) => budget + m.profit);
-    const totalCost = marketsAdj.reduce((s, m, i) => s + m.price * shares[i], 0);
-    const sumPrices = marketsAdj.reduce((s, m) => s + m.price, 0);
+    const Bnum = parseFloat(budget) || 0;
+    const stakes = marketsAdj.map((m) => Bnum + m.profit);
+    const totalCost = marketsAdj.reduce(
+        (s, m, i) => s + (parseFloat(m.price) || 0) * stakes[i],
+        0
+    );
+    const sumPrices = marketsAdj.reduce(
+        (s, m) => s + (parseFloat(m.price) || 0),
+        0
+    );
 
     /** Event handlers */
     const updateMarket = (idx, key, value) => {
@@ -69,15 +85,23 @@ export default function HedgeCalculator() {
             arr[idx] = { ...arr[idx], [key]: value };
             return key === "profit" ? rebalance(arr, idx) : arr;
         });
-        if (key === "profit") setLastChanged(idx);
     };
 
-    const addOutcome = () =>
-        setMarkets((prev) => [...prev, { name: "New Driver", price: 0.2, profit: 0 }]);
+    const addOutcome = () => {
+        setMarkets((prev) => [
+            ...prev,
+            { id: nextId, name: "New Driver", price: "0.2", profit: 0 },
+        ]);
+        setNextId((i) => i + 1);
+    };
     const removeOutcome = (idx) => {
         if (markets.length <= 2) return;
         setMarkets((prev) => prev.filter((_, i) => i !== idx));
-        if (autoIdx === idx) setAutoIdx(0);
+        setAutoIdx((prev) => {
+            if (prev === idx) return 0;
+            if (prev > idx) return prev - 1;
+            return prev;
+        });
     };
 
     /** Render */
@@ -98,7 +122,7 @@ export default function HedgeCalculator() {
                     className="border border-gray-600 rounded px-3 py-2 text-lg w-full sm:w-40 bg-gray-700 text-gray-100"
                     placeholder="e.g. 100"
                     value={budget}
-                    onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setBudget(e.target.value)}
                 />
             </div>
 
@@ -107,7 +131,7 @@ export default function HedgeCalculator() {
                 {marketsAdj.map((m, idx) => {
                     const { min, max } = getProfitBounds(m.profit);
                     return (
-                    <div key={idx} className="border border-gray-700 rounded-xl p-4 bg-gray-800 shadow-lg space-y-3">
+                    <div key={m.id} className="border border-gray-700 rounded-xl p-4 bg-gray-800 shadow-lg space-y-3">
                         <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-center">
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                 <label htmlFor={`name-${idx}`} className="font-medium">
@@ -134,9 +158,14 @@ export default function HedgeCalculator() {
                                     className="border border-gray-600 rounded px-2 py-1 w-full sm:w-24 bg-gray-700 text-gray-100"
                                     placeholder="0.50"
                                     value={m.price}
-                                    onChange={(e) =>
-                                        updateMarket(idx, "price", clamp(parseFloat(e.target.value) || 0, 0, 1))
-                                    }
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        updateMarket(
+                                            idx,
+                                            "price",
+                                            val === "" ? "" : clamp(parseFloat(val), 0, 1)
+                                        );
+                                    }}
                                 />
                             </div>
                             <label
@@ -189,12 +218,12 @@ export default function HedgeCalculator() {
                         </div>
                         <div className="text-sm text-gray-300 grid grid-cols-3 gap-4 mt-1">
                             <div>
-                                Shares: <strong>{shares[idx].toFixed(4)}</strong>
+                                Stake: <strong>{stakes[idx].toFixed(4)}</strong>
                             </div>
                             <div>
-                                Cost: <strong>${(shares[idx] * m.price).toFixed(2)}</strong>
+                                Cost: <strong>${(stakes[idx] * (parseFloat(m.price) || 0)).toFixed(2)}</strong>
                             </div>
-                            <div>YES price: ${m.price.toFixed(2)}</div>
+                            <div>YES price: ${(parseFloat(m.price) || 0).toFixed(2)}</div>
                         </div>
                     </div>
                     );
@@ -209,7 +238,7 @@ export default function HedgeCalculator() {
             </button>
 
             <div className="text-right font-medium pt-6 border-t border-gray-700 mt-6">
-                Total cost = ${totalCost.toFixed(2)} / {budget}
+                Total cost = ${totalCost.toFixed(2)} / {Bnum}
             </div>
             {sumPrices >= 1 && (
                 <div className="text-red-400 font-semibold text-center mt-4">
