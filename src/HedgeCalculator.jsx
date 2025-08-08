@@ -80,13 +80,16 @@ export default function HedgeCalculator() {
             <h1 className="text-3xl font-bold mb-4">Polymarket Hedge Calculator</h1>
 
             {/* Budget card */}
-            <div className="border rounded-xl bg-yellow-50 shadow-inner p-6 flex flex-wrap items-center gap-4">
-                <label className="font-semibold text-lg">Available money to bet ($):</label>
+            <div className="border rounded-xl bg-yellow-50 shadow-inner p-6 flex flex-col sm:flex-row flex-wrap items-center gap-4">
+                <label htmlFor="budget" className="font-semibold text-lg">
+                    Available money to bet ($):
+                </label>
                 <input
+                    id="budget"
                     type="number"
                     min={0}
                     step={1}
-                    className="border rounded px-3 py-2 text-lg w-40"
+                    className="border rounded px-3 py-2 text-lg w-full sm:w-40"
                     placeholder="e.g. 100"
                     value={budget}
                     onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
@@ -97,31 +100,49 @@ export default function HedgeCalculator() {
             <div className="space-y-6">
                 {marketsAdj.map((m, idx) => (
                     <div key={idx} className="border rounded-xl p-4 bg-white/80 shadow-lg space-y-3">
-                        <div className="flex flex-wrap gap-4 items-center">
-                            <div className="flex items-center gap-2">
-                                <label className="font-medium">Name:</label>
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-center">
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <label htmlFor={`name-${idx}`} className="font-medium">
+                                    Name:
+                                </label>
                                 <input
-                                    className="border rounded px-2 py-1"
+                                    id={`name-${idx}`}
+                                    className="border rounded px-2 py-1 w-full sm:w-40"
+                                    placeholder="Outcome name"
                                     value={m.name}
                                     onChange={(e) => updateMarket(idx, "name", e.target.value)}
                                 />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <label className="font-medium">YES price:</label>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <label htmlFor={`price-${idx}`} className="font-medium">
+                                    YES price:
+                                </label>
                                 <input
+                                    id={`price-${idx}`}
                                     type="number"
                                     min={0}
                                     max={1}
                                     step={0.01}
-                                    className="border rounded px-2 py-1 w-24"
+                                    className="border rounded px-2 py-1 w-full sm:w-24"
+                                    placeholder="0.50"
                                     value={m.price}
                                     onChange={(e) =>
                                         updateMarket(idx, "price", clamp(parseFloat(e.target.value) || 0, 0, 1))
                                     }
                                 />
                             </div>
-                            <label className="flex items-center gap-1 cursor-pointer select-none">
-                                <input type="radio" checked={autoIdx === idx} onChange={() => setAutoIdx(idx)} /> Auto-balance
+                            <label
+                                htmlFor={`auto-${idx}`}
+                                className="flex items-center gap-1 cursor-pointer select-none"
+                            >
+                                <input
+                                    id={`auto-${idx}`}
+                                    type="radio"
+                                    name="auto"
+                                    checked={autoIdx === idx}
+                                    onChange={() => setAutoIdx(idx)}
+                                />
+                                Auto-balance
                             </label>
                             {markets.length > 2 && (
                                 <button
@@ -132,21 +153,32 @@ export default function HedgeCalculator() {
                                 </button>
                             )}
                         </div>
-                        <div className="flex justify-between items-center font-semibold mt-2">
-                            <span>
-                                Profit if wins: <span className="text-blue-700">${m.profit.toFixed(2)}</span>
+                        <label
+                            htmlFor={`profit-${idx}`}
+                            className="flex justify-between items-center font-semibold mt-2"
+                        >
+                            <span>Profit if wins:</span>
+                            <span className="text-blue-700">${m.profit.toFixed(2)}</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                id={`profit-${idx}`}
+                                type="range"
+                                min={0}
+                                disabled={autoIdx === idx}
+                                className={`w-full ${autoIdx === idx ? "opacity-40" : ""}`}
+                                value={m.profit}
+                                max={budget * 10}
+                                step={0.01}
+                                aria-valuemin={0}
+                                aria-valuemax={budget * 10}
+                                aria-valuenow={m.profit}
+                                onChange={(e) => updateMarket(idx, "profit", parseFloat(e.target.value))}
+                            />
+                            <span className="text-sm text-gray-700 w-16 text-right">
+                                ${m.profit.toFixed(2)}
                             </span>
                         </div>
-                        <input
-                            type="range"
-                            min={0}
-                            disabled={autoIdx === idx}
-                            className={`w-full ${autoIdx === idx ? "opacity-40" : ""}`}
-                            value={m.profit}
-                            max={budget * 10}
-                            step={0.01}
-                            onChange={(e) => updateMarket(idx, "profit", parseFloat(e.target.value))}
-                        />
                         <div className="text-sm text-gray-700 grid grid-cols-3 gap-4 mt-1">
                             <div>
                                 Shares: <strong>{shares[idx].toFixed(4)}</strong>
