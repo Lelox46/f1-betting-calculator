@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 
 /**
  * Polymarket Hedge Calculator — v3.1
@@ -18,8 +18,55 @@ export default function HedgeCalculator() {
         { id: 2, name: "Driver C", price: "0.13", profit: 0 },
     ]);
     const [nextId, setNextId] = useState(3);
+    const [marketQuery, setMarketQuery] = useState("");
+    const [marketResults, setMarketResults] = useState([]);
 
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+    useEffect(() => {
+        if (marketQuery.length < 3) {
+            setMarketResults([]);
+            return;
+        }
+        const controller = new AbortController();
+        const t = setTimeout(() => {
+            fetch(
+                `https://gamma.polymarket.com/api/markets?limit=10&search=${encodeURIComponent(
+                    marketQuery
+                )}`,
+                { signal: controller.signal }
+            )
+                .then((res) => res.json())
+                .then((data) => setMarketResults(data?.markets || []))
+                .catch(() => {});
+        }, 300);
+        return () => {
+            controller.abort();
+            clearTimeout(t);
+        };
+    }, [marketQuery]);
+
+    const loadMarket = async (id) => {
+        if (!id) return;
+        try {
+            const res = await fetch(`https://gamma.polymarket.com/api/markets/${id}`);
+            const market = await res.json();
+            const outcomes =
+                market?.outcomes?.map((o, idx) => ({
+                    id: idx,
+                    name: o.name || o.title || o.token?.symbol || `Outcome ${idx + 1}`,
+                    price: String(o.price ?? o.lastPrice ?? o.yesPrice ?? 0),
+                    profit: 0,
+                })) || [];
+            if (outcomes.length) {
+                setMarkets(outcomes);
+                setNextId(outcomes.length);
+                setAutoIdx(0);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     /** Compute dynamic slider bounds so the full range is usable */
     const getProfitBounds = (profit) => {
@@ -112,6 +159,30 @@ export default function HedgeCalculator() {
     return (
         <div className="p-6 mx-auto max-w-4xl space-y-8">
             <h1 className="text-3xl font-bold mb-4">Polymarket Hedge Calculator</h1>
+
+            {/* Market selector */}
+            <div className="border border-gray-700 rounded-xl bg-gray-800 shadow-inner p-6 flex flex-col sm:flex-row flex-wrap items-center gap-4">
+                <input
+                    type="text"
+                    className="border border-gray-600 rounded px-3 py-2 text-lg w-full sm:w-64 bg-gray-700 text-gray-100"
+                    placeholder="Search Polymarket markets"
+                    value={marketQuery}
+                    onChange={(e) => setMarketQuery(e.target.value)}
+                />
+                {marketResults.length > 0 && (
+                    <select
+                        className="border border-gray-600 rounded px-3 py-2 text-lg w-full sm:w-64 bg-gray-700 text-gray-100"
+                        onChange={(e) => loadMarket(e.target.value)}
+                    >
+                        <option value="">Select market...</option>
+                        {marketResults.map((m) => (
+                            <option key={m.id} value={m.id}>
+                                {m.question || m.title || m.slug}
+                            </option>
+                        ))}
+                    </select>
+                )}
+            </div>
 
             {/* Budget card */}
             <div className="border border-gray-700 rounded-xl bg-gray-800 shadow-inner p-6 flex flex-col sm:flex-row flex-wrap items-center gap-4">
