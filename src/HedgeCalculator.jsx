@@ -21,6 +21,12 @@ export default function HedgeCalculator() {
 
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
+    /** Compute dynamic slider bounds so the full range is usable */
+    const getProfitBounds = (profit) => {
+        const max = Math.max(profit * 2, 10);
+        return { min: 0, max };
+    };
+
     /** Rebalance */
     const rebalance = useCallback(
         (arr, changedIdx = null) => {
@@ -98,7 +104,9 @@ export default function HedgeCalculator() {
 
             {/* Outcomes */}
             <div className="space-y-6">
-                {marketsAdj.map((m, idx) => (
+                {marketsAdj.map((m, idx) => {
+                    const { min, max } = getProfitBounds(m.profit);
+                    return (
                     <div key={idx} className="border border-gray-700 rounded-xl p-4 bg-gray-800 shadow-lg space-y-3">
                         <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-center">
                             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -164,14 +172,14 @@ export default function HedgeCalculator() {
                             <input
                                 id={`profit-${idx}`}
                                 type="range"
-                                min={0}
+                                min={min}
                                 disabled={autoIdx === idx}
                                 className={`w-full bg-gray-700 ${autoIdx === idx ? "opacity-40" : ""}`}
                                 value={m.profit}
-                                max={budget * 10}
+                                max={max}
                                 step={0.01}
-                                aria-valuemin={0}
-                                aria-valuemax={budget * 10}
+                                aria-valuemin={min}
+                                aria-valuemax={max}
                                 aria-valuenow={m.profit}
                                 onChange={(e) => updateMarket(idx, "profit", parseFloat(e.target.value))}
                             />
@@ -189,7 +197,8 @@ export default function HedgeCalculator() {
                             <div>YES price: ${m.price.toFixed(2)}</div>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
 
             <button
