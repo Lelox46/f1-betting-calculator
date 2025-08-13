@@ -48,7 +48,6 @@ export default function HedgeCalculator() {
             clearTimeout(t);
         };
     }, [marketQuery]);
-
     const loadMarket = async (slugOrId) => {
         if (!slugOrId) return;
         try {
